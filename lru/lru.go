@@ -15,18 +15,22 @@ limitations under the License.
 */
 
 // Package lru implements an LRU cache.
+//LRU算法是缓存淘汰算法的一种，least recently used， 最近最少使用的被淘汰。
+//其核心思想是“如果数据最近被访问过，那么将来被访问的几率也更高”。
 package lru
 
 import "container/list"
 
-// Cache is an LRU cache. It is not safe for concurrent access.
+// Cache is an LRU cache. It is not safe for concurrent access.(会存在并发问题)
 type Cache struct {
 	// MaxEntries is the maximum number of cache entries before
 	// an item is evicted. Zero means no limit.
+	// 满多少开始淘汰
 	MaxEntries int
 
 	// OnEvicted optionally specificies a callback function to be
 	// executed when an entry is purged from the cache.
+	// 当某一个条目被淘汰时执行的回调函数
 	OnEvicted func(key Key, value interface{})
 
 	ll    *list.List

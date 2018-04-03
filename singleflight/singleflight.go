@@ -16,6 +16,7 @@ limitations under the License.
 
 // Package singleflight provides a duplicate function call suppression
 // mechanism.
+//singlefloght 包提供了一种抑制重复调用的机制，即多个相同请求只执行一次
 package singleflight
 
 import "sync"
@@ -38,6 +39,9 @@ type Group struct {
 // sure that only one execution is in-flight for a given key at a
 // time. If a duplicate comes in, the duplicate caller waits for the
 // original to complete and receives the same results.
+
+//Do 函数执行并返回给定函数fn的结果，保证多个相同(key)的调用在同一时间只有一个正在执行。
+// 当接收到一个重复的调用时，这个重复的调用会等待，直到最早的那个调用完成，然后返回相同的结果。
 func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
 	g.mu.Lock()
 	if g.m == nil {
