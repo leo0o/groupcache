@@ -35,18 +35,23 @@ const defaultBasePath = "/_groupcache/"
 const defaultReplicas = 50
 
 // HTTPPool implements PeerPicker for a pool of HTTP peers.
+// HTTPPool 是一个实现了PeerPicker接口的 HTTP节点池。
+// HTTPPool 是一个集群节点选取器，保存所有节点信息，获取对等节点缓存时，通过计算key的“一致性哈希值”与节点的哈希值比较来选取集群中的某个节点
 type HTTPPool struct {
 	// Context optionally specifies a context for the server to use when it
 	// receives a request.
 	// If nil, the server uses a nil Context.
+	//Context 选择性的指定一个context，供server在接收请求时使用。
 	Context func(*http.Request) Context
 
 	// Transport optionally specifies an http.RoundTripper for the client
 	// to use when it makes a request.
 	// If nil, the client uses http.DefaultTransport.
+	//Transport 选择性的指定一个http.RoundTripper，供client在发送请求时使用。如果为nil，client则使用http.DefaultTransport
 	Transport func(Context) http.RoundTripper
 
 	// this peer's base URL, e.g. "https://example.net:8000"
+	//本节点的url
 	self string
 
 	// opts specifies the options.
@@ -61,14 +66,17 @@ type HTTPPool struct {
 type HTTPPoolOptions struct {
 	// BasePath specifies the HTTP path that will serve groupcache requests.
 	// If blank, it defaults to "/_groupcache/".
+	//指定接受请求的http路径
 	BasePath string
 
 	// Replicas specifies the number of key replicas on the consistent hash.
 	// If blank, it defaults to 50.
+	// 一致性hash里面每个节点的虚拟节点个数
 	Replicas int
 
 	// HashFn specifies the hash function of the consistent hash.
 	// If blank, it defaults to crc32.ChecksumIEEE.
+	// 一致性hash里面的hash函数
 	HashFn consistenthash.Hash
 }
 
@@ -126,6 +134,7 @@ func (p *HTTPPool) Set(peers ...string) {
 	}
 }
 
+//选取节点，如果该key映射到当前节点则返回nil,false 否则返回对应的节点地址和true
 func (p *HTTPPool) PickPeer(key string) (ProtoGetter, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -180,6 +189,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+// 实现了作为peer必须实现的ProtoGetter接口
 type httpGetter struct {
 	transport func(Context) http.RoundTripper
 	baseURL   string

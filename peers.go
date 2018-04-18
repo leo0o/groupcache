@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // peers.go defines how processes find and communicate with their peers.
+//peers.go 详述了进程如何寻找节点，如何与他们交流。
 
 package groupcache
 

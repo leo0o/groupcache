@@ -210,9 +210,9 @@ func (g *Group) Get(ctx Context, key string, dest Sink) error {
 	if dest == nil {
 		return errors.New("groupcache: nil dest Sink")
 	}
-	value, cacheHit := g.lookupCache(key)
+	value, cacheHit := g.lookupCache(key)  //先从 mainCache 和 hotCache 中查找
 
-	if cacheHit {
+	if cacheHit {  //如果命中，则返回
 		g.Stats.CacheHits.Add(1)
 		return setSinkView(dest, value)
 	}
@@ -222,7 +222,7 @@ func (g *Group) Get(ctx Context, key string, dest Sink) error {
 	// (if local) will set this; the losers will not. The common
 	// case will likely be one caller.
 	destPopulated := false
-	value, destPopulated, err := g.load(ctx, key, dest)
+	value, destPopulated, err := g.load(ctx, key, dest)  //如果没命中，则去原始数据中获取
 	if err != nil {
 		return err
 	}
@@ -264,8 +264,8 @@ func (g *Group) load(ctx Context, key string, dest Sink) (value ByteView, destPo
 		g.Stats.LoadsDeduped.Add(1)
 		var value ByteView
 		var err error
-		if peer, ok := g.peers.PickPeer(key); ok {
-			value, err = g.getFromPeer(ctx, peer, key)
+		if peer, ok := g.peers.PickPeer(key); ok {       //先找到对应的节点
+			value, err = g.getFromPeer(ctx, peer, key)   //如果是在其他远端节点上的话，通过http从远端获取
 			if err == nil {
 				g.Stats.PeerLoads.Add(1)
 				return value, nil
@@ -276,14 +276,14 @@ func (g *Group) load(ctx Context, key string, dest Sink) (value ByteView, destPo
 			// probably boring (normal task movement), so not
 			// worth logging I imagine.
 		}
-		value, err = g.getLocally(ctx, key, dest)
+		value, err = g.getLocally(ctx, key, dest)    //从本地节点获取
 		if err != nil {
 			g.Stats.LocalLoadErrs.Add(1)
 			return nil, err
 		}
 		g.Stats.LocalLoads.Add(1)
 		destPopulated = true // only one caller of load gets this return value
-		g.populateCache(key, value, &g.mainCache)
+		g.populateCache(key, value, &g.mainCache)   //获取到的数据存到mainCache
 		return value, nil
 	})
 	if err == nil {
@@ -293,7 +293,7 @@ func (g *Group) load(ctx Context, key string, dest Sink) (value ByteView, destPo
 }
 
 func (g *Group) getLocally(ctx Context, key string, dest Sink) (ByteView, error) {
-	err := g.getter.Get(ctx, key, dest)
+	err := g.getter.Get(ctx, key, dest)          //这里的Get函数为用户新建Group的时候传入的GetterFunc，通常为一些db操作
 	if err != nil {
 		return ByteView{}, err
 	}
@@ -315,7 +315,7 @@ func (g *Group) getFromPeer(ctx Context, peer ProtoGetter, key string) (ByteView
 	// conditionally populate hotCache.  For now just do it some
 	// percentage of the time.
 	if rand.Intn(10) == 0 {
-		g.populateCache(key, value, &g.hotCache)
+		g.populateCache(key, value, &g.hotCache)  //从远端节点获取到数据之后存到 hotCache
 	}
 	return value, nil
 }
